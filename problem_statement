@@ -1,0 +1,5 @@
+In the program, design and implement your own business rules to define when to buy and when to sell vit units and by how many units to buy or sell. The objective of your business rules should be to maximize the value of wallet_total (to maximize profit)
+
+Business Rule:
+
+A user may only perform a single transaction (buy or sell) in a day. Furthermore, a user may only buy or sell a max of 1 vit units a day.
