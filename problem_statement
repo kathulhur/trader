@@ -2,4 +2,6 @@ In the program, design and implement your own business rules to define when to b
 
 Business Rule:
 
-A user may only perform a single transaction (buy or sell) in a day. Furthermore, a user may only buy or sell a max of 1 vit units a day.
+When to buy: High
+When to sell: Low
+How many units: all

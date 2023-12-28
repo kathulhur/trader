@@ -5,6 +5,9 @@ class Trader:
         self.__day = day
         self.__wallet_total = self.__calculate_wallet_total()
 
+    def get_vit_balance(self):
+        return self.__vit_balance
+
     def get_wallet_total(self):
         return self.__wallet_total
     
@@ -23,7 +26,6 @@ class Trader:
         self.__wallet_total = self.__calculate_wallet_total()
     
 
-    
 
     def sell(self, number_of_units):
         # Decrease vit_balance and 
@@ -36,16 +38,32 @@ class Trader:
         self.__vit_balance -= number_of_units
         self.__wallet_total = self.__calculate_wallet_total()
 
+    def sell_all(self):
+        self.sell(self.__vit_balance)
+
+    def buy_all(self):
+        number_of_units_to_buy = self.__php_balance // self.__day.get_vit().get_value()
+        self.buy(number_of_units_to_buy)
+
     def has_vit_balance(self):
         return self.__vit_balance > 0
     
+    def has_enough_balance_to_buy_vit(self):
+        return self.__php_balance >= self.__day.get_vit().get_value()
+    
+    def reset(self):
+        self.__vit_balance = 0
+        self.__php_balance = 5000
+        self.__wallet_total = self.__calculate_wallet_total()
+
     def __str__(self):
         return f"""
-------------------------------
+        
+-----------Trader Stats--------------
 Php_balance:  {self.__php_balance}
 vit_balance:  {self.__vit_balance}
 wallet_total: {self.get_wallet_total()}
-------------------------------
+------------------------------------
         """
 
 
@@ -124,6 +142,8 @@ class Day:
     def get_current_day(self):
         return self.__current_index
     
+    def is_last_day(self):
+        return self.__current_index == self.__unit_prices.size() - 1
 
     def reset(self):
         self.__current_index = 0
@@ -139,20 +159,17 @@ class VitUnitPriceProjection(Enum):
 
 class Application:
     __valid_menu_input = 'abcd'
-    __valid_trade_input = 'abc'
 
     def __init__(self):
         self.__trader = None
         self.__day = None
         self.__unit_prices = None
-
     
     def get_vit_unit_price_projection(self):
 
         tomorrow = self.__day.get_current_day() + 1
         unit_price_today = self.__day.get_vit().get_value()
         unit_price_tomorrow = self.__unit_prices.get_vit(tomorrow).get_value()
-        print(unit_price_today, unit_price_tomorrow)
 
         if(unit_price_today < unit_price_tomorrow):
             return VitUnitPriceProjection.Rise
@@ -161,21 +178,21 @@ class Application:
         else:
             return VitUnitPriceProjection.Steady
         
-
-
     def __initialize(self):
-        file_valid = False
-        while(not(file_valid)):
-            try:
-                filename = self.__ask_filename_input()
-                self.__unit_prices = UnitPrices(filename)
-                file_valid = True
-            except Exception:
-                print("Invalid file input. Please remove file extension and ensure that values are comma separated.")
         
+        self.__unit_prices = self.__load_unit_prices()
         self.__day = Day(self.__unit_prices)
         self.__trader = Trader(self.__day)
         
+    def __load_unit_prices(self):
+        while(True):
+            try:
+                filename = self.__ask_filename_input()
+                return UnitPrices(filename)
+            except Exception:
+                print("Invalid file input. Please remove file extension and ensure that values are comma separated.")
+        
+
 
     def __ask_filename_input(self):
         return input("Please input file name (w/o file extension): ")
@@ -189,44 +206,47 @@ class Application:
 
             if(user_choice == 'a'):
                 self.__unit_prices.visualize_data()
-            elif (user_choice == 'b'):
-                print(self.__trader)
-                self.__display_trade_menu()
-                user_choice = None
 
-                while(user_choice != 'c'):
-                    user_choice = self.__ask_valid_trade_input()
-                    if(user_choice == 'a'):
-                        self.__trader.buy(1)
-                        print(self.__trader)
-                        self.__display_trade_menu()
-                         
-                    elif(user_choice == 'b'):
-                        try:
-                            self.__trader.sell(1)
-                            print(self.__trader)
-                            self.__display_trade_menu()
-                        except ValueError as e:
-                            print(e)
+            elif (user_choice == 'b'): # Execute Trade
+                self.__execute_trade()
 
-                    elif(user_choice == 'c'):
-                        break
+            elif(user_choice == 'c'):
+                self.__load_unit_prices()
+                self.__reset()
 
-            elif (user_choice == 'c'):
-                self.__day.next_day()
             elif(user_choice == 'd'):
                 self.__exit()
 
-    def __display_trade_menu(self):
-        projection = self.get_vit_unit_price_projection()
-        print(
-f"""
-(a) Buy {"(Not Recommended, Vit value is projected to decline)" if projection == VitUnitPriceProjection.Decline else ""}
-(b) Sell {"(Not Recommended) Vit value is projected to rise" if projection == VitUnitPriceProjection.Rise else ""}
-(c) Go back
-"""
-        )
+    def __execute_trade(self):
+        while(not(self.__day.is_last_day())):
+            projection = self.get_vit_unit_price_projection()
+
+            if(projection == VitUnitPriceProjection.Decline):
+                if(self.__trader.has_vit_balance()): # sell all vit once it is projected that there will be a decline
+                    print(f"You have sold {self.__trader.get_vit_balance()} vits")
+                    self.__trader.sell_all()
+                    print(self.__trader)
+
+            elif(projection == VitUnitPriceProjection.Rise): # buy vit with all the money the first time there's a projected rise in vit price
+                if(self.__trader.has_enough_balance_to_buy_vit()):
+                    self.__trader.buy_all()
+                    print(f"You have bought {self.__trader.get_vit_balance()} vits")
+                    print(self.__trader)
+
+            self.__day.next_day()
+
+        if(self.__trader.has_vit_balance()): # Handle the case where all days had gone and there's vit balance available
+            self.__trader.sell_all()
+            print(self.__trader)
+
+        self.__reset()
+
+
+    def __reset(self):
+        self.__day.reset()
+        self.__trader.reset()
   
+
     def __ask_valid_menu_input(self):
         while(True):
             user_input = input()
@@ -236,31 +256,20 @@ f"""
                 print("Invalid input. Please try again.")
 
 
-    def __ask_valid_trade_input(self):
-        while(True):
-            user_input = input()
-            if(user_input in self.__valid_trade_input):
-                return user_input
-            else:
-                print("Invalid input. Please try again.")
-
-
     def __display_menu(self):
         print(f"""
-_______________________________    
-Hello Trader
+________________________________    
+              
+Hello Trader!
 (Choose from the options)
-    
-Vit Value Today: {self.__day.get_vit().get_value()}
--------------------------------
+              
 (a) Display Time Series Chart
 (b) Execute Trade
-(c) Next Day
+(c) Choose a new file
 (d) Exit
 ________________________________
             
-                """
-              )
+""")
 
     def __exit(self):
         print("-------------------END-----------------------")
