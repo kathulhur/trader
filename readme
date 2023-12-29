@@ -1,0 +1,8 @@
+
+
+[optional] Create a virtual environment (Recommended)
+
+1. Install requirements.txt
+2. Run the command at the root of the file
+    python -m trader
+
