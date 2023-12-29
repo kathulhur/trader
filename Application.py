@@ -64,9 +64,9 @@ class Application:
                 self.__unit_prices.visualize_data()
 
             elif (user_choice == 'b'): # Execute Trade
-                print('----------------Start of Transaction-------------------')
+                print('----------------Start of Transactions-------------------')
                 self.__execute_trade()
-                print('-----------------End of Transaction-------------------')
+                print('-----------------End of Transactions-------------------')
 
             elif(user_choice == 'c'):
                 self.__initialize()
