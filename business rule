@@ -1,7 +1,7 @@
 In the program, design and implement your own business rules to define when to buy and when to sell vit units and by how many units to buy or sell. The objective of your business rules should be to maximize the value of wallet_total (to maximize profit)
 
-Business Rule:
+Business Rule (Greedy approach):
 
-When to buy: High
-When to sell: Low
+When to buy: Low
+When to sell: High
 How many units: all
