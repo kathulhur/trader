@@ -7,6 +7,8 @@
 2. Install packages listed in requirements.txt
     pip install -r requirements.txt
 
+3. Add the input file (similar to unit_prices.txt) in the same directory as this file
+
 3. Run the command below
     python -m trader
 
